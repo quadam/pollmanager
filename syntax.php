@@ -74,7 +74,8 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
      * Connect pattern to lexer
      */
     function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('{{pollmanager}}', $mode, 'plugin_pollmanager');
+        $this->Lexer->addSpecialPattern('{{pollmanager}}',
+            $mode, 'plugin_pollmanager');
     }
 
     /**
@@ -96,13 +97,9 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         // prevent caching to ensure the poll results are fresh
         $renderer->info['cache'] = FALSE;
 
-        // The data file is a md5 checksum of the given string, 
-        // placed in folder /path/to/dokuwiki/data/meta/ 
-        // (indicated by the metaFN() function.
-        // "$polls" will hold all the array of all the active polls.
-        $pollssum = md5('@pollmanager@');
-        $pollsfile = metaFN($pollssum, '.pollmanager');
-        $polls  = unserialize(@file_get_contents($pollsfile));
+        //$pollssum = md5('@pollmanager@');
+        //$pollsfile = metaFN($pollssum, '.pollmanager');
+        $polls  = $this->_getPolls('@pollmanager@', $polls_file);
 
         // If the request comes with a poll id, cast to 
         // integer.
@@ -132,39 +129,36 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                 unset($polls[$pollid]['users'][$user]);
             }
             elseif (!empty($_POST['open'])) {
-                $closed_polls = md5('@pollmanager_closed@');
-                $closed_file = metaFN($closed_polls, '.pollmanager');
-                $closed_data  =
-                    unserialize(@file_get_contents($closed_file));
-                $polls[] = $closed_data[$pollid];
+                $closed_polls = $this->_getPolls('@pollmanager_closed@',
+                    $closed_polls_file);
+                $polls[] = $closed_polls[$pollid];
                 unset($closed_data[$pollid]);
-                $fh = fopen($closed_file, 'w');
-                fwrite($fh, serialize($closed_data));
-                fclose($fh);
+                $this->_writePolls($closed_polls, $closed_polls_file);
             }
             elseif (!empty($_POST['delete'])) {
                 // Back up the poll and delete it from the $polls 
                 // array.
-                $backup_polls = md5('@pollmanager_deleted@');
-                $backup_file = metaFN($backup_polls, '.pollmanager');
-                $backup_data  =
-                    unserialize(@file_get_contents($backup_file));
-                $backup_data[] = $polls[$pollid];
-                $fh = fopen($backup_file, 'w');
-                fwrite($fh, serialize($backup_data));
-                fclose($fh);
-                unset($polls[$pollid]);
+                $deleted_polls = $this->_getPolls('@pollmanager_deleted@',
+                    $deleted_polls_file);
+                if (isset($_POST['open'])) {
+                    $deleted_polls[] = $polls[$pollid];
+                    unset($polls[$pollid]);
+                }
+                else {
+                    $closed_polls = $this->_getPolls('@pollmanager_closed@',
+                        $closed_polls_file);
+                    $deleted_polls[] = $closed_polls[$pollid];
+                    unset($closed_polls[$pollid]);
+                    $this->_writePolls($closed_polls, $closed_polls_file);
+                }
+                $this->_writePolls($deleted_polls, $deleted_polls_file);
             }
             elseif (!empty($_POST['close'])) {
-                $closed_polls = md5('@pollmanager_closed@');
-                $closed_file = metaFN($closed_polls, '.pollmanager');
-                $closed_data  =
-                    unserialize(@file_get_contents($closed_file));
-                $closed_data[] = $polls[$pollid];
-                $fh = fopen($closed_file, 'w');
-                fwrite($fh, serialize($closed_data));
-                fclose($fh);
+                $closed_polls = $this->_getPolls('@pollmanager_closed@',
+                    $closed_polls_file);
+                $closed_polls[] = $polls[$pollid];
                 unset($polls[$pollid]);
+                $this->_writePolls($closed_polls, $closed_polls_file);
             }
             elseif (!empty($_POST['create_poll'])) {
                 // Check if date is valid and extract to a good 
@@ -225,9 +219,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             }
 
             // Write results to data file.
-            $fh = fopen($pollsfile, 'w');
-            fwrite($fh, serialize($polls));
-            fclose($fh);
+            $this->_writePolls($polls, $polls_file);
         }
 
         global $ID;
@@ -244,6 +236,21 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         $renderer->doc .= $this->_showPolls($polls, $closed);
         return true;
 
+    }
+
+    function _getPolls($poll_file_string, &$pollsfile) {
+        // The data file is a md5 checksum of the given string, 
+        // placed in folder /path/to/dokuwiki/data/meta/ 
+        // (indicated by the metaFN() function.)
+        // The return value will be the polls array in the file.
+        $pollsfile = metaFN(md5($poll_file_string), '.pollmanager');
+        return unserialize(@file_get_contents($pollsfile));
+    }
+
+    function _writePolls($polls, $pollsfile) {
+        $fh = fopen($pollsfile, 'w');
+        fwrite($fh, serialize($polls));
+        fclose($fh);
     }
 
     function _showPolls($polls, $closed = NULL) {
@@ -304,6 +311,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             $text .= '<input type="hidden" name="pollid" value="'.
                 $pollid.'"/>';
             if (!$closed) {
+                $text .= '<input type="hidden" name="open" value="" />'
                 $text .= '<input type="submit" name="vote" value="'.
                     $this->getLang('vote').'" />';
                 $text .= '<input type="submit" name="unset['.$pollid.
