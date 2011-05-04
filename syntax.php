@@ -97,8 +97,6 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         // prevent caching to ensure the poll results are fresh
         $renderer->info['cache'] = FALSE;
 
-        //$pollssum = md5('@pollmanager@');
-        //$pollsfile = metaFN($pollssum, '.pollmanager');
         $polls  = $this->_getPolls('@pollmanager@', $polls_file);
 
         // If the request comes with a poll id, cast to 
@@ -125,9 +123,11 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                 $vote = $_POST['poll'];
                 $polls[$pollid]['users'][$user] = $vote[$pollid];
             }
+
             elseif (!empty($_POST['unset'])) {
                 unset($polls[$pollid]['users'][$user]);
             }
+
             elseif (!empty($_POST['open'])) {
                 $closed_polls = $this->_getPolls('@pollmanager_closed@',
                     $closed_polls_file);
@@ -135,6 +135,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                 unset($closed_data[$pollid]);
                 $this->_writePolls($closed_polls, $closed_polls_file);
             }
+
             elseif (!empty($_POST['delete'])) {
                 // Back up the poll and delete it from the $polls 
                 // array.
@@ -188,6 +189,9 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                 if (isset($pollid)) {
                     $i = $pollid;
                     $createtime = $polls[$pollid]['created'];
+                    if (!isset($_POST['reset_votes']) || $_POST['reset_votes'] != 'true') {
+                        $users = $polls[$pollid]['users'];
+                    }
                 }
                 else {
                     while (!empty($polls[$i])) {
@@ -215,7 +219,8 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                     'title' => $renderer->_xmlEntities($_POST['title']),
                     'question' => $renderer->_xmlEntities($_POST['question']),
                     'creator' => $_SERVER['REMOTE_USER'],
-                    'choices' => $choice_fill);
+                    'choices' => $choice_fill, 
+                    'users' => $users);
             }
 
             // Write results to data file.
@@ -311,7 +316,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             $text .= '<input type="hidden" name="pollid" value="'.
                 $pollid.'"/>';
             if (!$closed) {
-                $text .= '<input type="hidden" name="open" value="" />'
+                $text .= '<input type="hidden" name="open" value="" />';
                 $text .= '<input type="submit" name="vote" value="'.
                     $this->getLang('vote').'" />';
                 $text .= '<input type="submit" name="unset['.$pollid.
@@ -363,6 +368,9 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             $choices = $polls[$pollid]['choices'];
             $hidden = '<input type="hidden" name="pollid" value="'.
                 $pollid.'" />';
+            $reset_votes = '<label class="block"><span>'.
+                $this->getLang('reset').'</span><input type="checkbox"'.
+                'name="reset_votes" value="true"/></label>';
         }
         else {
             $new_choices = 5;
@@ -402,6 +410,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                 '</span><input type="text" name="c['.$i;
             $text .= ']" /></label>';
         }
+        $text .= $reset_votes;
         $text .= '<input type="hidden" name="write" value="1" />';
         $text .= '<input type="submit" name="new_poll" value="'.
             $this->getLang('add').'" />';

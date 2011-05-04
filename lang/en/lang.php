@@ -1,11 +1,5 @@
 <?php
 
-/*
-$lang['btn_vote'] = 'Vote';
-$lang['btn_changemind'] = 'Change my mind';
-$lang['login_required'] = 'You need to log in to be able to vote';
- */
-
 $lang['add'] = 'Add five choices';
 $lang['choice'] = 'Choice';
 $lang['choices'] = 'Choices';
@@ -17,6 +11,7 @@ $lang['edit_poll'] = 'Edit Poll';
 $lang['new_poll'] = 'New Poll';
 $lang['question'] = 'Question';
 $lang['reopen_poll'] = 'Reopen Poll';
+$lang['reset'] = 'Reset votes';
 $lang['respondents'] = 'Respondents';
 $lang['submit'] = 'Submit Poll';
 $lang['title'] = 'Title';
