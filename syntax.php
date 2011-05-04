@@ -14,7 +14,7 @@
  *
  * TODO:
  * * Apply style. (Currently hardcoded for vote results bar.
- * * Sorting of polls (by date).
+ * * Sort by different criteria.
  * * Multiple choice questions.
  * * Permissions for deleting, closing, reopening, editing polls.
  * * Configuration for displaying only titles or the whole poll on 
@@ -90,6 +90,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         // prevent caching to ensure the poll results are fresh
         $renderer->info['cache'] = FALSE;
 
+        // Read the open polls.
         $polls  = $this->_getPolls('@pollmanager@', $polls_file);
 
         // Read the closed polls if needed
@@ -256,6 +257,14 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         fclose($fh);
     }
 
+    function _getSort($polls) {
+        foreach ($polls as $pollid=>$poll) {
+            $sorted[$pollid] = $poll['date'];
+        }
+        asort($sorted);
+        return $sorted;
+    }
+
     function _showPolls($polls, $closed = NULL) {
         global $ID;
         $text = '<h2>';
@@ -272,8 +281,11 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         if (!is_array($polls)) {
             return $text;
         }
+        $order = $this->_getSort($polls);
 
-        foreach ($polls as $pollid=>$poll) {
+        //foreach ($polls as $pollid=>$poll) {
+        foreach ($order as $pollid=>$_date) {
+            $poll = $polls[$pollid];
             $results = $this->_getResults($poll);
 
             $text .= '<h3>'.$poll['title'].'</h3>'.
