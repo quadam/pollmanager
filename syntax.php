@@ -15,7 +15,8 @@
  * TODO:
  * * Apply style. (Currently hardcoded for vote results bar.
  * * Sort by different criteria.
- * * Multiple choice questions.
+ * * Groups of answers (combining multi-value and non-multi-value 
+ * etc)
  * * Permissions for deleting, closing, reopening, editing polls.
  * * Configuration for displaying only titles or the whole poll on 
  * the main page.
@@ -26,6 +27,7 @@
  * * Menu?
  * * Is multiple files for closed/open/deleted polls a good option?
  * * Administration options.
+ * * Documentation.
  *
  */
 
@@ -116,13 +118,13 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
 
         $user = $_SERVER['REMOTE_USER'];
 
-        // Request field "write" set by hidden fields. Used to identify 
+        // Request field "write" set by hidden fields. Used to identify
         // which requests are expected to write to the data file.
         if (isset($_POST['write'])) {
-            if (!empty($_POST['vote']) && !empty($_POST['poll'])) {
+            if (!empty($_POST['vote']) && isset($_POST['vote_alt'])) {
                 // Set the vote
-                $vote = $_POST['poll'];
-                $polls[$pollid]['users'][$user] = $vote[$pollid];
+                $vote = $_POST['vote_alt'];
+                $polls[$pollid]['users'][$user] = $vote;
             }
 
             elseif (!empty($_POST['unset'])) {
@@ -207,6 +209,13 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                         }
                     }
                 }
+
+                if ($_POST['multi_value'] == 'true') {
+                    $multi_value = true;
+                }
+                else {
+                    $multi_value = false;
+                }
                 $option = $renderer->_xmlEntities($option);
                 $polls[$i] = array(
                     'created' => $createtime,
@@ -215,7 +224,8 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                     'question' => $renderer->_xmlEntities($_POST['question']),
                     'creator' => $user,
                     'choices' => $choice_fill, 
-                    'users' => $users);
+                    'users' => $users,
+                    'multi_value' => $multi_value);
             }
 
             // Write results to data file.
@@ -278,14 +288,15 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         }
         $text .= '</h2>';
 
-        if (!is_array($polls)) {
+        if (!is_array($polls) || count($polls) == 0) {
             return $text;
         }
         $order = $this->_getSort($polls);
 
-        //foreach ($polls as $pollid=>$poll) {
         foreach ($order as $pollid=>$_date) {
             $poll = $polls[$pollid];
+            $vote = $poll['users'][$_SERVER['REMOTE_USER']];
+            $checked = '';
             $results = $this->_getResults($poll);
 
             $text .= '<h3>'.$poll['title'].'</h3>'.
@@ -302,10 +313,28 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
 
             if (isset($choices)) {
                 foreach ($choices as $cid=>$choice) {
+                    if (isset($vote) && $vote == $cid) {
+                        $checked = 'checked';
+                    }
+                    elseif (is_array($vote) && in_array($cid, $vote)) {
+                            $checked = 'checked';
+                    }
+                    else {
+                        $checked = '';
+                    }
+                    
                     $text .= '<tr><td><label>';
                     if (!$closed) {
-                        $text .= '<input type="radio" name="poll['.
-                            $pollid.']" value="'.$cid.'" />';
+                        if ($poll['multi_value']) {
+                            $text .= '<input type="checkbox"'.
+                                ' name="vote_alt[]" value="'.$cid.'" '.
+                                $checked.' />';
+
+                        }
+                        else {
+                            $text .= '<input type="radio" name="vote_alt" '.
+                                $checked.' value="'.$cid.'" />';
+                        }
                     }
                     $text .= $choice.'</label></td>';
                     $text .= '<td>'.$results['count'][$cid].'</td>';
@@ -432,6 +461,9 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                 '</span><input type="text" name="c['.$i;
             $text .= ']" /></label>';
         }
+        $text .= '<label class="block"><span>'.
+            $this->getLang('multi_value').'</span><input type="checkbox"'.
+            'name="multi_value" value="true"/></label>';
         $text .= $reset_votes;
         $text .= '<input type="hidden" name="write" value="1" />';
         $text .= '<input type="submit" name="new_poll" value="'.
@@ -454,10 +486,21 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             }
         }
         if (isset($votes)) {
-            foreach ($votes as $user=>$vote) {
-                $results['choice'][$vote][] = $user;
-                $results['count'][$vote] += 1;
-                $results['votes'] += 1;
+            if ($poll['multi_value']) {
+                foreach ($votes as $user=>$vote) {
+                    foreach ($vote as $choice) {
+                        $results['choice'][$choice][] = $user;
+                        $results['count'][$choice] += 1;
+                        $results['votes'] += 1;
+                    }
+                }
+            }
+            else {
+                foreach ($votes as $user=>$vote) {
+                    $results['choice'][$vote][] = $user;
+                    $results['count'][$vote] += 1;
+                    $results['votes'] += 1;
+                }
             }
         }
         return $results;
