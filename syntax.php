@@ -92,6 +92,12 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
 
         $polls  = $this->_getPolls('@pollmanager@', $polls_file);
 
+        // Read the closed polls if needed
+        if (!empty($_POST['reopen']) || isset($_POST['closed']) || isset($_POST['close']) || isset($_REQUEST['closed_polls'])) {
+            $closed_polls = $this->_getPolls('@pollmanager_closed@',
+                $closed_polls_file);
+        }
+
         // If the request comes with a poll id, cast to 
         // integer.
         $pollid = NULL;
@@ -113,25 +119,25 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         // which requests are expected to write to the data file.
         if (isset($_POST['write'])) {
             if (!empty($_POST['vote']) && !empty($_POST['poll'])) {
+                // Set the vote
                 $vote = $_POST['poll'];
                 $polls[$pollid]['users'][$user] = $vote[$pollid];
             }
 
             elseif (!empty($_POST['unset'])) {
+                // Unset a users vote.
                 unset($polls[$pollid]['users'][$user]);
             }
 
-            elseif (!empty($_POST['open'])) {
-                $closed_polls = $this->_getPolls('@pollmanager_closed@',
-                    $closed_polls_file);
+            elseif (!empty($_POST['reopen'])) {
+                // Reopen a closed poll.
                 $polls[] = $closed_polls[$pollid];
-                unset($closed_data[$pollid]);
-                $this->_writePolls($closed_polls, $closed_polls_file);
+                unset($closed_polls[$pollid]);
             }
 
             elseif (!empty($_POST['delete'])) {
-                // Back up the poll and delete it from the $polls 
-                // array.
+                // Back up the poll and delete it. Can be either 
+                // an open or a closed poll
                 $deleted_polls = $this->_getPolls('@pollmanager_deleted@',
                     $deleted_polls_file);
                 if (isset($_POST['open'])) {
@@ -139,20 +145,15 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                     unset($polls[$pollid]);
                 }
                 else {
-                    $closed_polls = $this->_getPolls('@pollmanager_closed@',
-                        $closed_polls_file);
                     $deleted_polls[] = $closed_polls[$pollid];
                     unset($closed_polls[$pollid]);
-                    $this->_writePolls($closed_polls, $closed_polls_file);
                 }
                 $this->_writePolls($deleted_polls, $deleted_polls_file);
             }
             elseif (!empty($_POST['close'])) {
-                $closed_polls = $this->_getPolls('@pollmanager_closed@',
-                    $closed_polls_file);
+                // Close an open poll.
                 $closed_polls[] = $polls[$pollid];
                 unset($polls[$pollid]);
-                $this->_writePolls($closed_polls, $closed_polls_file);
             }
             elseif (!empty($_POST['create_poll'])) {
                 // Check if date is valid and extract to a good 
@@ -218,6 +219,9 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
 
             // Write results to data file.
             $this->_writePolls($polls, $polls_file);
+            if (isset($closed_polls)) {
+                $this->_writePolls($closed_polls, $closed_polls_file);
+            }
         }
 
         global $ID;
@@ -229,11 +233,10 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             $this->getLang('closed_polls').'</a>';
 
         if (isset($_REQUEST['closed_polls'])) {
-            $polls = unserialize(@file_get_contents(
-                metaFN(md5('@pollmanager_closed@'), '.pollmanager')));
-            $closed = true;
+            $renderer->doc .= $this->_showPolls($closed_polls, true);
+            return true;
         }
-        $renderer->doc .= $this->_showPolls($polls, $closed);
+        $renderer->doc .= $this->_showPolls($polls);
         return true;
 
     }
@@ -258,9 +261,11 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         $text = '<h2>';
         if (isset($closed)) {
             $text .= $this->getLang('closed_polls');
+            $action = wl($ID).'&closed_polls=1';
         }
         else {
             $text .= $this->getLang('open_polls');
+            $action = wl($ID);
         }
         $text .= '</h2>';
 
@@ -272,7 +277,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             $results = $this->_getResults($poll);
 
             $text .= '<h3>'.$poll['title'].'</h3>'.
-                '<form method="post" action="'.wl($ID).'">'.
+                '<form method="post" action="'.$action.'">'.
                 '<p>'.$poll['question'].'</p>';
             if (isset($poll['date'])) {
                 $text .= '<p>'.date("Y m d", $poll['date']).
@@ -332,7 +337,10 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                     $this->getLang('delete_poll').'" />';
             }
             else {
-                $text .= '<input type="submit" name="open" value="'.
+                $text .= '<input type="hidden" name="closed" value="" />';
+                $text .= '<input type="submit" name="delete" value="'.
+                    $this->getLang('delete_poll').'" />';
+                $text .= '<input type="submit" name="reopen" value="'.
                     $this->getLang('reopen_poll').'" />';
             }
             $text .= '</form>';
