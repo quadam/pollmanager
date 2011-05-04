@@ -178,7 +178,6 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
 
                 // Current time as creation time.
                 $createtime = date('YmdHis');
-                //$pfilename = md5('@pollmanager@'.$createtime);
 
                 // Deciding on what ID the poll gets. If $pollid 
                 // is set also the createtime was set before.
@@ -296,7 +295,6 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         foreach ($order as $pollid=>$_date) {
             $poll = $polls[$pollid];
             $vote = $poll['users'][$_SERVER['REMOTE_USER']];
-            $checked = '';
             $results = $this->_getResults($poll);
 
             $text .= '<h3>'.$poll['title'].'</h3>'.
@@ -313,10 +311,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
 
             if (isset($choices)) {
                 foreach ($choices as $cid=>$choice) {
-                    if (isset($vote) && $vote == $cid) {
-                        $checked = 'checked';
-                    }
-                    elseif (is_array($vote) && in_array($cid, $vote)) {
+                    if (is_array($vote) && in_array($cid, $vote)) {
                             $checked = 'checked';
                     }
                     else {
@@ -329,10 +324,9 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                             $text .= '<input type="checkbox"'.
                                 ' name="vote_alt[]" value="'.$cid.'" '.
                                 $checked.' />';
-
                         }
                         else {
-                            $text .= '<input type="radio" name="vote_alt" '.
+                            $text .= '<input type="radio" name="vote_alt[]" '.
                                 $checked.' value="'.$cid.'" />';
                         }
                     }
@@ -486,26 +480,16 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
             }
         }
         if (isset($votes)) {
-            if ($poll['multi_value']) {
-                foreach ($votes as $user=>$vote) {
-                    foreach ($vote as $choice) {
-                        $results['choice'][$choice][] = $user;
-                        $results['count'][$choice] += 1;
-                        $results['votes'] += 1;
-                    }
-                }
-            }
-            else {
-                foreach ($votes as $user=>$vote) {
-                    $results['choice'][$vote][] = $user;
-                    $results['count'][$vote] += 1;
+            foreach ($votes as $user=>$vote) {
+                foreach ($vote as $choice) {
+                    $results['choice'][$choice][] = $user;
+                    $results['count'][$choice] += 1;
                     $results['votes'] += 1;
                 }
             }
         }
         return $results;
     }
-
 }
 
 ?> 

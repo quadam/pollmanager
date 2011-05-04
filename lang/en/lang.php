@@ -8,6 +8,7 @@ $lang['closed_polls'] = 'Closed Polls';
 $lang['date'] = 'Date';
 $lang['delete_poll'] = 'Delete Poll';
 $lang['edit_poll'] = 'Edit Poll';
+$lang['multi_value'] = 'Multi valued question';
 $lang['new_poll'] = 'New Poll';
 $lang['open_polls'] = 'Open Polls';
 $lang['question'] = 'Question';
