@@ -3,32 +3,12 @@
  * Pollmanager Plugin: allows to create and manage polls
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author     Stephane Chazelas <stephane@artesyncp.com>
+ * @author     Adam Viklund <adam.viklund@gmail.com>
  *
  * Start point was Stephane Chazelas <stephane@artesyncp.com>'s
  * userpoll plugin which in turn is
  * heavily inspired (copy-pasted) by
  *             Esther Brunner <wikidesign@gmail.com>'s poll plugin
- */
-/**
- *
- * TODO:
- * * Apply style. (Currently hardcoded for vote results bar.
- * * Sort by different criteria.
- * * Groups of answers (combining multi-value and non-multi-value 
- * etc)
- * * Permissions for deleting, closing, reopening, editing polls.
- * * Configuration for displaying only titles or the whole poll on 
- * the main page.
- * * Add swedish.
- * * Email notification.
- * * Automatic poll closing.
- * * Possibility to add comments to ones vote.
- * * Menu?
- * * Is multiple files for closed/open/deleted polls a good option?
- * * Administration options.
- * * Documentation.
- *
  */
 
 if(!defined('DOKU_INC')) define('DOKU_INC',realpath(dirname(__FILE__).'/../../').'/');
@@ -48,7 +28,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         return array(
             'author' => 'Adam Viklund',
             'email'  => 'adam.viklund@gmail.com',
-            'date'   => '2011-03-29',
+            'date'   => '2011-05-04',
             'name'   => 'Pollmanager Plugin',
             'desc'   => 'Create and manage polls.',
             'url'    => '',

@@ -1,0 +1,38 @@
+
+===== pollmanager =====
+
+Pollmanager is a plugin for dokuwiki used to create and manage
+polls. Only users on your dokuwiki site are allowed to vote on the
+polls.
+
+
+==== Installation ====
+
+1. Download this whole folder and place it in your plugins folder
+in dokuwiki.
+
+2. Put {{pollmanager}} in any page where you want the pollmanager.
+
+
+==== Usage ====
+
+After going through the installation process it's just to create
+polls and they will appear on the main pollmanager page.
+
+
+==== TODO ====
+
+ * Apply style. (Currently hardcoded for vote results bar.)
+ * Sort by different criteria.
+ * Groups of answers (combining multi-value and non-multi-value 
+ etc in a single question)
+ * Permissions for deleting, closing, reopening, editing polls.
+ * Add swedish.
+ * Email notification.
+ * Automatic poll closing.
+ * Possibility to add comments to ones vote.
+ * Is multiple files for closed/open/deleted polls a good
+ option?
+ * Administration and configuration options.
+ * Documentation.
+
