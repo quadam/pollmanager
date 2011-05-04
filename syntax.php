@@ -13,25 +13,18 @@
 /**
  *
  * TODO:
- * * Refactor code into the render() function. (Especially for the 
- * _xmlEntities() function.) Done, sort of.
  * * Apply style. (Currently hardcoded for vote results bar.
  * * Sorting of polls (by date).
  * * Multiple choice questions.
- * * Permissions for editing polls. More editing options.
- * * Close polls, possibility to see closed polls.
- * * Permissions for deleting polls. Backups. Deleting closed 
- * polls.
- * * Input hidden fields for poll identification and "write".
+ * * Permissions for deleting, closing, reopening, editing polls.
  * * Configuration for displaying only titles or the whole poll on 
  * the main page.
- * * Form validation.
  * * Add swedish.
  * * Email notification.
  * * Automatic poll closing.
  * * Possibility to add comments to ones vote.
  * * Menu?
- * * Is multiple files for closed/open polls a good option?
+ * * Is multiple files for closed/open/deleted polls a good option?
  * * Administration options.
  *
  */
@@ -218,7 +211,7 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
                     'date' => $date,
                     'title' => $renderer->_xmlEntities($_POST['title']),
                     'question' => $renderer->_xmlEntities($_POST['question']),
-                    'creator' => $_SERVER['REMOTE_USER'],
+                    'creator' => $user,
                     'choices' => $choice_fill, 
                     'users' => $users);
             }
@@ -230,6 +223,8 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
         global $ID;
         $renderer->doc .= '<a href="'.wl($ID).'&new_poll=1">'.
             $this->getLang('new_poll').'</a><br />';
+        $renderer->doc .= '<a href="'.wl($ID).'">'.
+            $this->getLang('open_polls').'</a><br />';
         $renderer->doc .= '<a href="'.wl($ID).'&closed_polls=1">'.
             $this->getLang('closed_polls').'</a>';
 
@@ -260,7 +255,14 @@ class syntax_plugin_pollmanager extends DokuWiki_Syntax_Plugin {
 
     function _showPolls($polls, $closed = NULL) {
         global $ID;
-        $text = '';
+        $text = '<h2>';
+        if (isset($closed)) {
+            $text .= $this->getLang('closed_polls');
+        }
+        else {
+            $text .= $this->getLang('open_polls');
+        }
+        $text .= '</h2>';
 
         if (!is_array($polls)) {
             return $text;

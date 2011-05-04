@@ -9,6 +9,7 @@ $lang['date'] = 'Date';
 $lang['delete_poll'] = 'Delete Poll';
 $lang['edit_poll'] = 'Edit Poll';
 $lang['new_poll'] = 'New Poll';
+$lang['open_polls'] = 'Open Polls';
 $lang['question'] = 'Question';
 $lang['reopen_poll'] = 'Reopen Poll';
 $lang['reset'] = 'Reset votes';
